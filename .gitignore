@@ -1,0 +1,13 @@
+.godot/
+*.uid
+*.import
+
+# Models (download manually, see README)
+models/*.gguf
+
+# Export builds
+*.exe
+*.pck
+*.x86_64
+*.sh
+*.console.exe
