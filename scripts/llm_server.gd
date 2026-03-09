@@ -12,6 +12,7 @@ const RETRY_INTERVAL := 0.5
 
 
 func _ready() -> void:
+	Config.ensure_extracted()
 	var bin_path: String = Config.llama_server_path
 	print("[LLMServer] looking for binary at: ", bin_path)
 	if not FileAccess.file_exists(bin_path):

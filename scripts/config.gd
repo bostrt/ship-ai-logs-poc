@@ -33,8 +33,52 @@ Rules:
 - If the question is unrelated to the ship or its systems, briefly deflect and remind the user you are a ship AI. Simple greetings are fine to acknowledge."""
 
 
+func _exe_dir() -> String:
+	return OS.get_executable_path().get_base_dir()
+
+
 func _resolve_path(subdir: String) -> String:
 	if OS.has_feature("editor"):
 		return ProjectSettings.globalize_path("res://").path_join(subdir)
-	else:
-		return OS.get_executable_path().get_base_dir().path_join(subdir)
+	return _exe_dir().path_join(subdir)
+
+
+func ensure_extracted() -> void:
+	if OS.has_feature("editor"):
+		return
+	var bin_sub := "bin/windows" if OS.get_name() == "Windows" else "bin/linux"
+	_extract_dir(bin_sub)
+	_extract_dir("models")
+
+
+func _extract_dir(subdir: String) -> void:
+	var src := "res://" + subdir
+	var dst := _exe_dir().path_join(subdir)
+	DirAccess.make_dir_recursive_absolute(dst)
+	var dir := DirAccess.open(src)
+	if not dir:
+		push_warning("[Config] cannot open: " + src)
+		return
+	dir.list_dir_begin()
+	var fname := dir.get_next()
+	while fname != "":
+		if not dir.current_is_dir():
+			var dst_file := dst.path_join(fname)
+			if not FileAccess.file_exists(dst_file):
+				print("[Config] extracting: ", fname)
+				_copy_file(src.path_join(fname), dst_file)
+		fname = dir.get_next()
+	dir.list_dir_end()
+
+
+func _copy_file(src: String, dst: String) -> void:
+	var f_in := FileAccess.open(src, FileAccess.READ)
+	if not f_in:
+		push_warning("[Config] cannot read: " + src)
+		return
+	var f_out := FileAccess.open(dst, FileAccess.WRITE)
+	if not f_out:
+		push_warning("[Config] cannot write: " + dst)
+		return
+	while f_in.get_position() < f_in.get_length():
+		f_out.store_buffer(f_in.get_buffer(1_048_576))  # 1 MB chunks
